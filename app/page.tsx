@@ -539,22 +539,33 @@ function Home() {
               width: 80mm;
               padding: 4mm 4mm;
               box-sizing: border-box;
-              font-family: 'Courier New', Courier, monospace;
-              font-size: 11px;
-              line-height: 1.5;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              font-size: 13px;
+              font-weight: 500;
+              line-height: 1.4;
               color: #000;
+              -webkit-font-smoothing: antialiased;
+              -moz-osx-font-smoothing: grayscale;
             }
             .thermal-receipt .tc  { text-align: center; }
             .thermal-receipt .b   { font-weight: 700; }
-            .thermal-receipt .big { font-size: 16px; font-weight: 900; }
+            .thermal-receipt .big { font-size: 16px; font-weight: 800; }
             .thermal-receipt .row { display: flex; justify-content: space-between; }
-            .thermal-receipt .sep { color: #444; display: block; margin: 4px 0; }
-            .thermal-receipt table { width: 100%; border-collapse: collapse; font-size: 10px; }
-            .thermal-receipt th   { border-bottom: 1px solid #000; padding: 2px 0; text-align: left; font-weight: 700; }
-            .thermal-receipt td   { border-bottom: 1px dotted #888; padding: 2px 0; vertical-align: top; word-break: break-word; }
+            .thermal-receipt .sep {
+              display: block;
+              border-top: 1.5px dashed #000;
+              height: 0;
+              margin: 6px 0;
+              font-size: 0;
+              color: transparent;
+              overflow: hidden;
+            }
+            .thermal-receipt table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            .thermal-receipt th   { border-bottom: 1.5px solid #000; padding: 3px 0; text-align: left; font-weight: 700; }
+            .thermal-receipt td   { border-bottom: 1px dashed #000; padding: 4px 0; vertical-align: top; word-break: break-word; color: #000; }
             .thermal-receipt .th-right { text-align: right; }
             .thermal-receipt .td-right { text-align: right; }
-            .thermal-receipt .sig-line  { border-top: 1px solid #000; text-align: center; padding-top: 3px; font-size: 10px; margin-top: 18px; }
+            .thermal-receipt .sig-line  { border-top: 1.5px solid #000; text-align: center; padding-top: 3px; font-size: 12px; margin-top: 18px; }
           }
         `}</style>
 
