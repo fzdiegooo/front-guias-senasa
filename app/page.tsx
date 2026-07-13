@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { AGRICULTORES, GUIA_BASE, TOTAL_REGISTROS, Agricultor } from "./data/agricultores";
 
 interface Item {
@@ -85,25 +86,25 @@ function Td({ children, className = "" }: { children: React.ReactNode; className
 /* ═══════════════════════════════════════════════════════════════════════
    MAIN PAGE
 ═══════════════════════════════════════════════════════════════════════ */
-export default function Home() {
+function Home() {
   /* Guide search */
   const [serieGuia] = useState("001");
-  const [nroGuia, setNroGuia] = useState("3927");
+  const [nroGuia, setNroGuia] = useState("3800");
   const [agricultor, setAgricultor] = useState<Agricultor | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   /* Form fields */
   const [fecha, setFecha] = useState("");
-  const [fletero, setFletero] = useState("ELMER ORE");
-  const [placa, setPlaca] = useState("C5P-799");
+  const [fletero, setFletero] = useState("");
+  const [placa, setPlaca] = useState("");
   const [organico, setOrganico] = useState(true);
   const [globalGap, setGlobalGap] = useState(true);
   const [nombreNativa, setNombreNativa] = useState("VARGAS");
-  const [nombreTransportista, setNombreTransportista] = useState("ELMER ORE");
+  const [nombreTransportista, setNombreTransportista] = useState("");
 
   /* Items */
   const [items, setItems] = useState<Item[]>([
-    { id: "1", item: "01", cantidad: "230", descripcion: "jabas", producto: "jengibre", detalle: "3450" },
+    { id: "1", item: "01", cantidad: "0", descripcion: "jabas", producto: "jengibre", detalle: "0" },
   ]);
 
   /* Set today's date once on mount */
@@ -123,14 +124,24 @@ export default function Home() {
     if (n < GUIA_BASE) { setAgricultor(null); setSearchError(`Mínimo permitido: ${GUIA_BASE}`); return; }
     const idx = (n - GUIA_BASE) % TOTAL_REGISTROS;
     setAgricultor(AGRICULTORES[idx]);
-    setNombreTransportista(fletero); // keep transport name in sync
     setSearchError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nroGuia]);
 
   /* Item helpers */
   const updateItem = (id: string, field: keyof Item, value: string) =>
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, [field]: value } : it)));
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.id === id) {
+          const updated = { ...it, [field]: value };
+          if (field === "cantidad") {
+            const num = Number(value);
+            updated.detalle = isNaN(num) || value.trim() === "" ? "0" : String(num * 15);
+          }
+          return updated;
+        }
+        return it;
+      })
+    );
 
   const addRow = () =>
     setItems((prev) => {
@@ -140,10 +151,10 @@ export default function Home() {
         {
           id: Math.random().toString(36).slice(2),
           item: String(next).padStart(2, "0"),
-          cantidad: "",
+          cantidad: "0",
           descripcion: "jabas",
           producto: "jengibre",
-          detalle: "",
+          detalle: "0",
         },
       ];
     });
@@ -164,28 +175,43 @@ export default function Home() {
     (it) => it.item || it.cantidad || it.descripcion || it.producto || it.detalle
   );
 
+  const handleReset = () => {
+    setNroGuia("3800");
+    setFletero("");
+    setPlaca("");
+    setOrganico(true);
+    setGlobalGap(true);
+    setNombreNativa("");
+    setNombreTransportista("");
+    setItems([{ id: "1", item: "01", cantidad: "0", descripcion: "jabas", producto: "jengibre", detalle: "0" }]);
+  };
+
   /* ──────────────────────────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-[#0d1410] text-[#dce8e0] font-sans text-sm antialiased">
+    <div className="min-h-screen bg-[#0d1410] text-[#dce8e0] font-sans text-sm antialiased flex flex-col justify-between">
 
       {/* ══ TOP BAR ══════════════════════════════════════════════════════ */}
       <header className="no-print sticky top-0 z-50 bg-[#0d1410]/95 backdrop-blur border-b border-[#1e2e20] px-4 py-2.5 flex items-center justify-between gap-4">
 
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div style={{ height: 26, overflow: "hidden", display: "flex", alignItems: "center" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-nativa-organics.png"
-              alt="Nativa Peru Organics"
-              style={{ height: "100%", filter: "invert(1) brightness(0.9)", mixBlendMode: "screen" }}
-            />
+          <svg viewBox="0 0 100 100" className="w-8 h-8 shrink-0" fill="none">
+            <polygon points="50,12 60,26 50,40 40,26" fill="#c0392b" />
+            <polygon points="76,38 86,52 76,66 66,52" fill="#b7950b" />
+            <polygon points="50,64 60,78 50,92 40,78" fill="#2d7d3f" />
+            <polygon points="24,38 34,52 24,66 14,52" fill="#ca6f1e" />
+            <polygon points="50,38 60,52 50,66 40,52" fill="#6c3483" />
+            <path d="M50,92 L50,98" stroke="#2d7d3f" strokeWidth="3" />
+          </svg>
+          <div>
+            <div className="text-base font-black tracking-tight" style={{ color: "#2d7d3f" }}>NATIVA</div>
+            <div className="text-[8px] font-semibold tracking-[0.2em] text-[#3d6045]">PERU ORGANICS</div>
           </div>
           <div className="hidden sm:block w-px h-6 bg-[#1e2e20] mx-1" />
           <span className="hidden sm:block text-[13px] text-[#5a7a62]">Guía de Recepción de Carga</span>
         </div>
 
-        {/* Guide search + print */}
+        {/* Guide search + actions */}
         <div className="flex items-center gap-2">
           {/* Series */}
           <div className="hidden md:flex items-center gap-1.5">
@@ -215,9 +241,12 @@ export default function Home() {
             </div>
           </div>
 
-          {searchError && (
-            <span className="hidden lg:block text-[10px] text-[#8a5050] font-medium">{searchError}</span>
-          )}
+          <button
+            onClick={handleReset}
+            className="px-3 py-1.5 text-xs font-semibold rounded border border-[#263428] text-zinc-400 hover:text-zinc-200 bg-[#151e17] hover:bg-[#1a241c] transition-all cursor-pointer"
+          >
+            Limpiar
+          </button>
 
           <button
             onClick={() => window.print()}
@@ -236,252 +265,255 @@ export default function Home() {
       </header>
 
       {/* ══ MAIN CONTENT ═════════════════════════════════════════════════ */}
-      <main className="max-w-3xl mx-auto px-3 py-6 flex flex-col gap-4">
+      <main className="max-w-3xl w-full mx-auto px-3 py-6 flex flex-col gap-4 flex-1 justify-center">
 
-        {/* ════════════════════════════════════════════════════════════════
-            DOCUMENT FORM — dark version of the ticket grid
-        ════════════════════════════════════════════════════════════════ */}
-        <div className="no-print flex flex-col gap-2">
+        {/* Search feedback pill */}
+        {searchError && (
+          <div className="no-print flex items-center gap-2 text-[11px] text-[#8a5050] bg-[#1a1212] border border-[#3a1e1e] rounded px-3 py-1.5">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+            {searchError} — El mínimo es guía <strong>{GUIA_BASE}</strong>
+          </div>
+        )}
 
-          {/* Search feedback pill */}
-          {searchError && (
-            <div className="flex items-center gap-2 text-[11px] text-[#8a5050] bg-[#1a1212] border border-[#3a1e1e] rounded px-3 py-1.5">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-              </svg>
-              {searchError} — El mínimo es guía <strong>{GUIA_BASE}</strong>
-            </div>
-          )}
+        {/* ── Document card ── */}
+        <div className="no-print border-2 border-[#263428] rounded-sm overflow-hidden shadow-2xl shadow-black/60 bg-[#0d1410]">
 
-          {/* ── Document card ── */}
-          <div className="border-2 border-[#263428] rounded-sm overflow-hidden shadow-2xl shadow-black/60">
+          {/* ── Header: Logo | Title | Guia N° ── */}
+          <div className="grid grid-cols-12 border-b-2 border-[#263428]">
 
-            {/* ── Header: Logo | Title | Guia N° ── */}
-            <div className="grid grid-cols-12 border-b-2 border-[#263428]">
-
-              {/* Logo col */}
-              <div className="col-span-3 border-r-2 border-[#263428] p-2 flex items-center justify-center bg-[#0f1810]">
-                <div style={{ height: 38, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/logo-nativa-organics.png"
-                    alt="Nativa Peru Organics"
-                    style={{ height: "100%", filter: "invert(1) brightness(0.9)", mixBlendMode: "screen" }}
-                  />
-                </div>
-              </div>
-
-              {/* Title col */}
-              <div className="col-span-6 flex items-center justify-center p-3 bg-[#0d1410]">
-                <h1 className="text-lg font-bold tracking-wide text-[#c8d8cc] text-center">
-                  GUIA DE RECEPCION DE CARGA
-                </h1>
-              </div>
-
-              {/* Guia N° col */}
-              <div className="col-span-3 border-l-2 border-[#263428] flex flex-col bg-[#0f1810]">
-                <div className="flex-1 flex items-center justify-between px-3 border-b border-[#263428]">
-                  <span className="font-bold text-[11px] text-[#5a7a62]">GUIA {serieGuia}-</span>
-                  <span className="font-bold text-[11px] text-[#6a4040]">N°</span>
-                </div>
-                <div className="flex-1 flex items-center justify-end px-3">
-                  <span className="font-black text-[22px] font-mono leading-none" style={{ color: "#b04040" }}>
-                    {guiaFormatted}
-                  </span>
+            {/* Logo col */}
+            <div className="col-span-3 border-r-2 border-[#263428] p-3 flex items-center justify-center bg-[#0f1810]">
+              <div className="flex items-center gap-2">
+                <svg viewBox="0 0 100 100" className="w-10 h-10 shrink-0" fill="none">
+                  <polygon points="50,12 60,26 50,40 40,26" fill="#c0392b" />
+                  <polygon points="76,38 86,52 76,66 66,52" fill="#b7950b" />
+                  <polygon points="50,64 60,78 50,92 40,78" fill="#2d7d3f" />
+                  <polygon points="24,38 34,52 24,66 14,52" fill="#ca6f1e" />
+                  <polygon points="50,38 60,52 50,66 40,52" fill="#6c3483" />
+                  <path d="M50,92 L50,98" stroke="#2d7d3f" strokeWidth="3" />
+                </svg>
+                <div>
+                  <div className="text-xl font-black leading-tight" style={{ color: "#2d7d3f" }}>NATIVA</div>
+                  <div className="text-[8px] tracking-widest text-[#3d6045] font-semibold">PERU ORGANICS</div>
                 </div>
               </div>
             </div>
 
-            {/* ── Info grid: 2 columns ── */}
-            <div className="grid grid-cols-2" style={{ background: "#0f1912" }}>
-
-              {/* Left col */}
-              <div className="border-r-2 border-[#263428]">
-                <Field
-                  label="Agricultor:"
-                  value={agricultor ? agricultor.nombre_agricultor : ""}
-                  readOnly
-                  placeholder="— ingrese guía —"
-                />
-                <Field
-                  label="DNI:"
-                  value={agricultor ? agricultor.dni_agricultor : ""}
-                  readOnly
-                  placeholder="—"
-                />
-                <Field
-                  label="Fletero:"
-                  value={fletero}
-                  onChange={(v) => { setFletero(v.toUpperCase()); setNombreTransportista(v.toUpperCase()); }}
-                  placeholder="Nombre transportista"
-                />
-                <Field
-                  label="Placa Vehículo:"
-                  value={placa}
-                  onChange={(v) => setPlaca(v.toUpperCase())}
-                  placeholder="XXX-000"
-                />
-              </div>
-
-              {/* Right col */}
-              <div>
-                <Field
-                  label="Fecha:"
-                  value={fecha}
-                  onChange={setFecha}
-                  placeholder="DD/MM/AAAA"
-                />
-                <Field
-                  label="Codigo:"
-                  value={agricultor ? agricultor.codigo : ""}
-                  readOnly
-                  placeholder="—"
-                />
-                <Field
-                  label="Zona:"
-                  value={agricultor ? agricultor.zona : ""}
-                  readOnly
-                  placeholder="—"
-                />
-
-                {/* Checkboxes row */}
-                <div className="flex items-center border-b border-[#263428] px-2 py-1.5 gap-5 min-h-[34px]">
-                  <label className="flex items-center gap-2 cursor-pointer select-none group">
-                    <div
-                      onClick={() => setOrganico((v) => !v)}
-                      className={`w-4 h-4 border-2 flex items-center justify-center shrink-0 rounded-sm transition-colors cursor-pointer ${organico ? "border-[#2d7d3f] bg-[#2d7d3f]" : "border-[#3a5040] bg-transparent"
-                        }`}
-                    >
-                      {organico && (
-                        <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
-                          <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-[12px] text-[#6a9478] group-hover:text-[#8ab898] transition-colors font-semibold">Orgánico</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none group">
-                    <div
-                      onClick={() => setGlobalGap((v) => !v)}
-                      className={`w-4 h-4 border-2 flex items-center justify-center shrink-0 rounded-sm transition-colors cursor-pointer ${globalGap ? "border-[#2d7d3f] bg-[#2d7d3f]" : "border-[#3a5040] bg-transparent"
-                        }`}
-                    >
-                      {globalGap && (
-                        <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
-                          <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-[12px] text-[#6a9478] group-hover:text-[#8ab898] transition-colors font-semibold">Global Gap</span>
-                  </label>
-                </div>
-              </div>
+            {/* Title col */}
+            <div className="col-span-6 flex items-center justify-center p-3 bg-[#0d1410]">
+              <h1 className="text-lg font-bold tracking-wide text-[#c8d8cc] text-center">
+                GUIA DE RECEPCION DE CARGA
+              </h1>
             </div>
 
-            {/* ── Se recepcionó ── */}
-            <div className="px-2 py-1.5 border-b-2 border-[#263428] border-t-2 text-[12px] font-medium text-[#8ab898] bg-[#0d1410]">
-              Se recepcionó lo siguiente:
-            </div>
-
-            {/* ── Items table ── */}
-            <div style={{ background: "#0d1410" }}>
-              <table className="w-full border-collapse">
-                <thead style={{ background: "#111e14" }}>
-                  <tr>
-                    <Th>ITEM</Th>
-                    <Th>CANTIDAD</Th>
-                    <Th>DESCRIPCION</Th>
-                    <Th>PRODUCTO</Th>
-                    <Th>DETALLE</Th>
-                    <th className="border border-[#263428] w-8 print:hidden" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((it) => (
-                    <tr key={it.id} className="hover:bg-[#111e14] transition-colors group">
-                      <Td className="w-10 text-center">
-                        <Editable value={it.item} onChange={(v) => updateItem(it.id, "item", v)} align="center" className="text-[#6a9478] font-bold" />
-                      </Td>
-                      <Td>
-                        <Editable value={it.cantidad} onChange={(v) => updateItem(it.id, "cantidad", v)} align="center" placeholder="0" />
-                      </Td>
-                      <Td>
-                        <Editable value={it.descripcion} onChange={(v) => updateItem(it.id, "descripcion", v)} align="center" placeholder="descripción" />
-                      </Td>
-                      <Td>
-                        <Editable value={it.producto} onChange={(v) => updateItem(it.id, "producto", v)} align="center" placeholder="producto" />
-                      </Td>
-                      <Td>
-                        <Editable value={it.detalle} onChange={(v) => updateItem(it.id, "detalle", v)} align="center" placeholder="0" />
-                      </Td>
-                      <td className="border border-[#263428] text-center w-8 print:hidden">
-                        <button
-                          onClick={() => removeRow(it.id)}
-                          className="text-[#4a3030] hover:text-[#a06060] transition-colors px-2 py-0.5 cursor-pointer text-base leading-none"
-                          title="Eliminar fila"
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Add row button */}
-              <div className="p-2 print:hidden border-b-2 border-t border-[#1e2e20] border-b-[#263428]">
-                <button
-                  onClick={addRow}
-                  className="text-[11px] px-3 py-1 rounded border border-[#263428] text-[#5a7a62] hover:text-[#7aaa88] hover:border-[#2d7d3f] bg-[#0f1912] hover:bg-[#111e14] transition-all cursor-pointer font-semibold"
-                >
-                  + Agregar fila
-                </button>
+            {/* Guia N° col */}
+            <div className="col-span-3 border-l-2 border-[#263428] flex flex-col bg-[#0f1810]">
+              <div className="flex-1 flex items-center justify-between px-3 border-b border-[#263428]">
+                <span className="font-bold text-[11px] text-[#5a7a62]">GUIA {serieGuia}-</span>
+                <span className="font-bold text-[11px] text-[#6a4040]">N°</span>
               </div>
-            </div>
-
-            {/* ── Signatures ── */}
-            <div className="grid grid-cols-2 border-t-2 border-[#263428]">
-              <div className="border-r-2 border-[#263428] p-3 bg-[#0d1410]">
-                <div className="font-bold mb-2 text-[11px] tracking-wider text-[#5a7a62] uppercase">
-                  Responsable Nativa
-                </div>
-                <div className="flex gap-2 mb-3 items-center">
-                  <span className="font-semibold text-[12px] whitespace-nowrap text-[#6a9478] shrink-0">Nombre:</span>
-                  <Editable value={nombreNativa} onChange={(v) => setNombreNativa(v.toUpperCase())} placeholder="NOMBRE" />
-                </div>
-                <div className="flex gap-2 items-center">
-                  <span className="font-semibold text-[12px] text-[#6a9478] shrink-0">Firma:</span>
-                  <span className="flex-1 border-b border-dotted border-[#2a3828] h-5" />
-                </div>
-              </div>
-              <div className="p-3 bg-[#0d1410]">
-                <div className="font-bold mb-2 text-[11px] tracking-wider text-[#5a7a62] uppercase">
-                  Transportista
-                </div>
-                <div className="flex gap-2 mb-3 items-center">
-                  <span className="font-semibold text-[12px] whitespace-nowrap text-[#6a9478] shrink-0">Nombre:</span>
-                  <Editable value={nombreTransportista} onChange={(v) => setNombreTransportista(v.toUpperCase())} placeholder="NOMBRE" />
-                </div>
-                <div className="flex gap-2 items-center">
-                  <span className="font-semibold text-[12px] text-[#6a9478] shrink-0">Firma:</span>
-                  <span className="flex-1 border-b border-dotted border-[#2a3828] h-5" />
-                </div>
+              <div className="flex-1 flex items-center justify-end px-3">
+                <span className="font-black text-[22px] font-mono leading-none" style={{ color: "#b04040" }}>
+                  {guiaFormatted}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Large Print Button */}
+          {/* ── Info grid: 2 columns ── */}
+          <div className="grid grid-cols-2" style={{ background: "#0f1912" }}>
+
+            {/* Left col */}
+            <div className="border-r-2 border-[#263428]">
+              <Field
+                label="Agricultor:"
+                value={agricultor ? agricultor.nombre_agricultor : ""}
+                readOnly
+                placeholder="— ingrese guía —"
+              />
+              <Field
+                label="DNI:"
+                value={agricultor ? agricultor.dni_agricultor : ""}
+                readOnly
+                placeholder="—"
+              />
+              <Field
+                label="Fletero:"
+                value={fletero}
+                onChange={(v) => { setFletero(v.toUpperCase()); setNombreTransportista(v.toUpperCase()); }}
+                placeholder="Nombre transportista"
+              />
+              <Field
+                label="Placa Vehículo:"
+                value={placa}
+                onChange={(v) => setPlaca(v.toUpperCase())}
+                placeholder="XXX-000"
+              />
+            </div>
+
+            {/* Right col */}
+            <div>
+              <Field
+                label="Fecha:"
+                value={fecha}
+                onChange={setFecha}
+                placeholder="DD/MM/AAAA"
+              />
+              <Field
+                label="Codigo:"
+                value={agricultor ? agricultor.codigo : ""}
+                readOnly
+                placeholder="—"
+              />
+              <Field
+                label="Zona:"
+                value={agricultor ? agricultor.zona : ""}
+                readOnly
+                placeholder="—"
+              />
+
+              {/* Checkboxes row */}
+              <div className="flex items-center border-b border-[#263428] px-2 py-1.5 gap-5 min-h-[34px]">
+                <label className="flex items-center gap-2 cursor-pointer select-none group">
+                  <div
+                    onClick={() => setOrganico((v) => !v)}
+                    className={`w-4 h-4 border-2 flex items-center justify-center shrink-0 rounded-sm transition-colors cursor-pointer ${organico ? "border-[#2d7d3f] bg-[#2d7d3f]" : "border-[#3a5040] bg-transparent"
+                      }`}
+                  >
+                    {organico && (
+                      <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
+                        <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-[12px] text-[#6a9478] group-hover:text-[#8ab898] transition-colors font-semibold">Orgánico</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none group">
+                  <div
+                    onClick={() => setGlobalGap((v) => !v)}
+                    className={`w-4 h-4 border-2 flex items-center justify-center shrink-0 rounded-sm transition-colors cursor-pointer ${globalGap ? "border-[#2d7d3f] bg-[#2d7d3f]" : "border-[#3a5040] bg-transparent"
+                      }`}
+                  >
+                    {globalGap && (
+                      <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
+                        <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-[12px] text-[#6a9478] group-hover:text-[#8ab898] transition-colors font-semibold">Global Gap</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Se recepcionó ── */}
+          <div className="px-2 py-1.5 border-b-2 border-[#263428] border-t-2 text-[12px] font-medium text-[#8ab898] bg-[#0d1410]">
+            Se recepcionó lo siguiente:
+          </div>
+
+          {/* ── Items table ── */}
+          <div style={{ background: "#0d1410" }}>
+            <table className="w-full border-collapse">
+              <thead style={{ background: "#111e14" }}>
+                <tr>
+                  <Th>ITEM</Th>
+                  <Th>CANTIDAD</Th>
+                  <Th>DESCRIPCION</Th>
+                  <Th>PRODUCTO</Th>
+                  <Th>DETALLE</Th>
+                  <th className="border border-[#263428] w-8 print:hidden" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it) => (
+                  <tr key={it.id} className="hover:bg-[#111e14] transition-colors group">
+                    <Td className="w-10 text-center">
+                      <Editable value={it.item} onChange={(v) => updateItem(it.id, "item", v)} align="center" className="text-[#6a9478] font-bold" />
+                    </Td>
+                    <Td>
+                      <Editable value={it.cantidad} onChange={(v) => updateItem(it.id, "cantidad", v)} align="center" placeholder="0" />
+                    </Td>
+                    <Td>
+                      <Editable value={it.descripcion} onChange={(v) => updateItem(it.id, "descripcion", v)} align="center" placeholder="descripción" />
+                    </Td>
+                    <Td>
+                      <Editable value={it.producto} onChange={(v) => updateItem(it.id, "producto", v)} align="center" placeholder="producto" />
+                    </Td>
+                    <Td>
+                      <Editable value={it.detalle} onChange={(v) => updateItem(it.id, "detalle", v)} align="center" placeholder="0" />
+                    </Td>
+                    <td className="border border-[#263428] text-center w-8 print:hidden">
+                      <button
+                        onClick={() => removeRow(it.id)}
+                        className="text-[#4a3030] hover:text-[#a06060] transition-colors px-2 py-0.5 cursor-pointer text-base leading-none"
+                        title="Eliminar fila"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Add row button */}
+            <div className="p-2 print:hidden border-b border-[#1e2e20]">
+              <button
+                onClick={addRow}
+                className="text-[11px] px-3 py-1 rounded border border-[#263428] text-[#5a7a62] hover:text-[#7aaa88] hover:border-[#2d7d3f] bg-[#0f1912] hover:bg-[#111e14] transition-all cursor-pointer font-semibold"
+              >
+                + Agregar fila
+              </button>
+            </div>
+          </div>
+
+          {/* ── Signatures ── */}
+          <div className="grid grid-cols-2 border-t border-[#263428]">
+            <div className="border-r border-[#263428] p-3 bg-[#0d1410]">
+              <div className="font-bold mb-2 text-[11px] tracking-wider text-[#5a7a62] uppercase">
+                Responsable Nativa
+              </div>
+              <div className="flex gap-2 mb-3 items-center">
+                <span className="font-semibold text-[12px] whitespace-nowrap text-[#6a9478] shrink-0">Nombre:</span>
+                <Editable value={nombreNativa} onChange={(v) => setNombreNativa(v.toUpperCase())} placeholder="NOMBRE" />
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="font-semibold text-[12px] text-[#6a9478] shrink-0">Firma:</span>
+                <span className="flex-1 border-b border-dotted border-[#2a3828] h-5" />
+              </div>
+            </div>
+            <div className="p-3 bg-[#0d1410]">
+              <div className="font-bold mb-2 text-[11px] tracking-wider text-[#5a7a62] uppercase">
+                Transportista
+              </div>
+              <div className="flex gap-2 mb-3 items-center">
+                <span className="font-semibold text-[12px] whitespace-nowrap text-[#6a9478] shrink-0">Nombre:</span>
+                <Editable value={nombreTransportista} onChange={(v) => setNombreTransportista(v.toUpperCase())} placeholder="NOMBRE" />
+              </div>
+              <div className="flex gap-2 items-center">
+                <span className="font-semibold text-[12px] text-[#6a9478] shrink-0">Firma:</span>
+                <span className="flex-1 border-b border-dotted border-[#2a3828] h-5" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Botón de Imprimir Boleta en pantalla */}
+        <div className="no-print flex justify-end mt-2">
           <button
             onClick={() => window.print()}
             disabled={!agricultor}
-            className="w-full py-3 mt-4 text-sm font-bold tracking-wider rounded border transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-2"
-            style={{ background: "#111e14", borderColor: "#2d7d3f", color: "#6aaa78" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#162214"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#111e14"; }}
+            className="flex items-center justify-center gap-2 w-full px-6 py-3 text-sm font-semibold rounded border border-[#2d7d3f] text-[#6aaa78] bg-[#1a2a1c] hover:bg-[#1e3520] transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
           >
-            🖨 Imprimir boleta térmica 80mm
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+              <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm-1 9H8v2h4v-2z" clipRule="evenodd" />
+            </svg>
+            Imprimir Boleta Térmica (80mm)
           </button>
         </div>
+
       </main>
 
       {/* ── FOOTER ── */}
@@ -527,12 +559,12 @@ export default function Home() {
         `}</style>
 
         {/* Logo image — cropped top+bottom whitespace, centered */}
-        <div style={{ overflow: 'hidden', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ overflow: 'hidden', height: 80, display: 'flex', alignItems: 'end', justifyContent: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/logo-nativa-organics.png"
             alt="Nativa Peru Organics"
-            style={{ width: '90%', maxWidth: 200, display: 'block', WebkitPrintColorAdjust: 'exact' }}
+            style={{ width: '90%', maxWidth: 200, display: 'block', marginTop: '-8%', WebkitPrintColorAdjust: 'exact' }}
           />
         </div>
         <span className="sep">{'-'.repeat(41)}</span>
@@ -594,3 +626,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(Home), { ssr: false });
