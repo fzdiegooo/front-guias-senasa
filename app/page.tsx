@@ -101,6 +101,7 @@ function Home() {
   const [globalGap, setGlobalGap] = useState(true);
   const [nombreNativa, setNombreNativa] = useState("VARGAS");
   const [nombreTransportista, setNombreTransportista] = useState("");
+  const [empresa, setEmpresa] = useState<"nativa" | "fruticola">("nativa");
 
   /* Items */
   const [items, setItems] = useState<Item[]>([
@@ -183,6 +184,7 @@ function Home() {
     setGlobalGap(true);
     setNombreNativa("");
     setNombreTransportista("");
+    setEmpresa("nativa");
     setItems([{ id: "1", item: "01", cantidad: "0", descripcion: "jabas", producto: "jengibre", detalle: "0" }]);
   };
 
@@ -209,6 +211,53 @@ function Home() {
           </div>
           <div className="hidden sm:block w-px h-6 bg-[#1e2e20] mx-1" />
           <span className="hidden sm:block text-[13px] text-[#5a7a62]">Guía de Recepción de Carga</span>
+        </div>
+
+        {/* Brand selector */}
+        <div className="flex items-center gap-3 bg-[#111c14] border border-[#203024] rounded px-2.5 py-1 shrink-0">
+          <label className="flex items-center gap-1.5 cursor-pointer select-none group">
+            <input
+              type="radio"
+              name="empresa"
+              checked={empresa === "nativa"}
+              onChange={() => setEmpresa("nativa")}
+              className="sr-only"
+            />
+            <div
+              className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 rounded-full transition-all ${empresa === "nativa" ? "border-[#2d7d3f] bg-[#2d7d3f]/20" : "border-[#3a5040] bg-transparent group-hover:border-[#4a7c59]"
+                }`}
+            >
+              {empresa === "nativa" && (
+                <div className="w-1.5 h-1.5 bg-[#6aaa78] rounded-full" />
+              )}
+            </div>
+            <span className={`text-xs transition-colors font-medium ${empresa === "nativa" ? "text-[#6aaa78] font-semibold" : "text-[#4a6452] group-hover:text-[#6a9478]"
+              }`}>
+              Nativa
+            </span>
+          </label>
+
+          <label className="flex items-center gap-1.5 cursor-pointer select-none group">
+            <input
+              type="radio"
+              name="empresa"
+              checked={empresa === "fruticola"}
+              onChange={() => setEmpresa("fruticola")}
+              className="sr-only"
+            />
+            <div
+              className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 rounded-full transition-all ${empresa === "fruticola" ? "border-[#2d7d3f] bg-[#2d7d3f]/20" : "border-[#3a5040] bg-transparent group-hover:border-[#4a7c59]"
+                }`}
+            >
+              {empresa === "fruticola" && (
+                <div className="w-1.5 h-1.5 bg-[#6aaa78] rounded-full" />
+              )}
+            </div>
+            <span className={`text-xs transition-colors font-medium ${empresa === "fruticola" ? "text-[#6aaa78] font-semibold" : "text-[#4a6452] group-hover:text-[#6a9478]"
+              }`}>
+              Frutícola
+            </span>
+          </label>
         </div>
 
         {/* Guide search + actions */}
@@ -285,19 +334,14 @@ function Home() {
 
             {/* Logo col */}
             <div className="col-span-3 border-r-2 border-[#263428] p-3 flex items-center justify-center bg-[#0f1810]">
-              <div className="flex items-center gap-2">
-                <svg viewBox="0 0 100 100" className="w-10 h-10 shrink-0" fill="none">
-                  <polygon points="50,12 60,26 50,40 40,26" fill="#c0392b" />
-                  <polygon points="76,38 86,52 76,66 66,52" fill="#b7950b" />
-                  <polygon points="50,64 60,78 50,92 40,78" fill="#2d7d3f" />
-                  <polygon points="24,38 34,52 24,66 14,52" fill="#ca6f1e" />
-                  <polygon points="50,38 60,52 50,66 40,52" fill="#6c3483" />
-                  <path d="M50,92 L50,98" stroke="#2d7d3f" strokeWidth="3" />
-                </svg>
-                <div>
-                  <div className="text-xl font-black leading-tight" style={{ color: "#2d7d3f" }}>NATIVA</div>
-                  <div className="text-[8px] tracking-widest text-[#3d6045] font-semibold">PERU ORGANICS</div>
-                </div>
+              <div className="flex items-center w-full justify-center h-12">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={empresa === "nativa" ? "/logo-nativa-organics.png" : "/logo-fruticola-1.png"}
+                  alt={empresa === "nativa" ? "Nativa" : "Frutícola"}
+                  className="max-w-full max-h-full object-contain"
+                  style={{ filter: "brightness(0) invert(1)" }}
+                />
               </div>
             </div>
 
@@ -473,7 +517,7 @@ function Home() {
           <div className="grid grid-cols-2 border-t border-[#263428]">
             <div className="border-r border-[#263428] p-3 bg-[#0d1410]">
               <div className="font-bold mb-2 text-[11px] tracking-wider text-[#5a7a62] uppercase">
-                Responsable Nativa
+                Responsable {empresa === "nativa" ? "Nativa" : "Frutícola"}
               </div>
               <div className="flex gap-2 mb-3 items-center">
                 <span className="font-semibold text-[12px] whitespace-nowrap text-[#6a9478] shrink-0">Nombre:</span>
@@ -570,12 +614,22 @@ function Home() {
         `}</style>
 
         {/* Logo image — cropped top+bottom whitespace, centered */}
-        <div style={{ overflow: 'hidden', height: 80, display: 'flex', alignItems: 'end', justifyContent: 'center' }}>
+        <div style={{
+          overflow: 'hidden',
+          height: 80,
+          display: 'flex',
+          alignItems: empresa === "nativa" ? 'end' : 'center',
+          justifyContent: 'center'
+        }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo-nativa-organics.png"
-            alt="Nativa Peru Organics"
-            style={{ width: '90%', maxWidth: 200, display: 'block', marginTop: '-8%', WebkitPrintColorAdjust: 'exact' }}
+            src={empresa === "nativa" ? "/logo-nativa-organics.png" : "/logo-fruticola-1.png"}
+            alt={empresa === "nativa" ? "Nativa Peru Organics" : "Frutícola"}
+            style={
+              empresa === "nativa"
+                ? { width: '90%', maxWidth: 200, display: 'block', marginTop: '-8%', WebkitPrintColorAdjust: 'exact' }
+                : { width: '85%', maxWidth: 180, display: 'block', WebkitPrintColorAdjust: 'exact' }
+            }
           />
         </div>
         <span className="sep">{'-'.repeat(41)}</span>
@@ -624,7 +678,7 @@ function Home() {
         </table>
         <span className="sep">{'-'.repeat(41)}</span>
 
-        <div className="b">RESPONSABLE NATIVA</div>
+        <div className="b">RESPONSABLE {empresa === "nativa" ? "NATIVA" : "FRUTICOLA"}</div>
         <div>Nombre: {nombreNativa || '___________'}</div>
         <div className="sig-line">Firma</div>
 
