@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { AGRICULTORES, GUIA_BASE, TOTAL_REGISTROS, Agricultor } from "./data/agricultores";
+import { REGISTROS_CODIGO } from "./data/codigos";
 
 interface Item {
   id: string;
@@ -89,7 +90,9 @@ function Td({ children, className = "" }: { children: React.ReactNode; className
 function Home() {
   /* Guide search */
   const [serieGuia] = useState("001");
+  const [modoBusqueda, setModoBusqueda] = useState<"guia" | "codigo">("guia");
   const [nroGuia, setNroGuia] = useState("3800");
+  const [codigoSel, setCodigoSel] = useState(REGISTROS_CODIGO[0].codigo);
   const [agricultor, setAgricultor] = useState<Agricultor | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
@@ -127,6 +130,15 @@ function Home() {
     setAgricultor(AGRICULTORES[idx]);
     setSearchError(null);
   }, [nroGuia]);
+
+  /* The guide-number lookup error is irrelevant while searching by code */
+  const guiaError = modoBusqueda === "guia" ? searchError : null;
+
+  /* Record currently shown: from the guide lookup or from the code list */
+  const datos =
+    modoBusqueda === "guia"
+      ? agricultor
+      : REGISTROS_CODIGO.find((r) => r.codigo === codigoSel) ?? null;
 
   /* Item helpers */
   const updateItem = (id: string, field: keyof Item, value: string) =>
@@ -177,7 +189,9 @@ function Home() {
   );
 
   const handleReset = () => {
+    setModoBusqueda("guia");
     setNroGuia("3800");
+    setCodigoSel(REGISTROS_CODIGO[0].codigo);
     setFletero("");
     setPlaca("");
     setOrganico(true);
@@ -260,6 +274,53 @@ function Home() {
           </label>
         </div>
 
+        {/* Search mode selector */}
+        <div className="flex items-center gap-3 bg-[#111c14] border border-[#203024] rounded px-2.5 py-1 shrink-0">
+          <label className="flex items-center gap-1.5 cursor-pointer select-none group">
+            <input
+              type="radio"
+              name="modoBusqueda"
+              checked={modoBusqueda === "guia"}
+              onChange={() => setModoBusqueda("guia")}
+              className="sr-only"
+            />
+            <div
+              className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 rounded-full transition-all ${modoBusqueda === "guia" ? "border-[#2d7d3f] bg-[#2d7d3f]/20" : "border-[#3a5040] bg-transparent group-hover:border-[#4a7c59]"
+                }`}
+            >
+              {modoBusqueda === "guia" && (
+                <div className="w-1.5 h-1.5 bg-[#6aaa78] rounded-full" />
+              )}
+            </div>
+            <span className={`text-xs transition-colors font-medium whitespace-nowrap ${modoBusqueda === "guia" ? "text-[#6aaa78] font-semibold" : "text-[#4a6452] group-hover:text-[#6a9478]"
+              }`}>
+              Por N° Guía
+            </span>
+          </label>
+
+          <label className="flex items-center gap-1.5 cursor-pointer select-none group">
+            <input
+              type="radio"
+              name="modoBusqueda"
+              checked={modoBusqueda === "codigo"}
+              onChange={() => setModoBusqueda("codigo")}
+              className="sr-only"
+            />
+            <div
+              className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 rounded-full transition-all ${modoBusqueda === "codigo" ? "border-[#2d7d3f] bg-[#2d7d3f]/20" : "border-[#3a5040] bg-transparent group-hover:border-[#4a7c59]"
+                }`}
+            >
+              {modoBusqueda === "codigo" && (
+                <div className="w-1.5 h-1.5 bg-[#6aaa78] rounded-full" />
+              )}
+            </div>
+            <span className={`text-xs transition-colors font-medium whitespace-nowrap ${modoBusqueda === "codigo" ? "text-[#6aaa78] font-semibold" : "text-[#4a6452] group-hover:text-[#6a9478]"
+              }`}>
+              Por Código
+            </span>
+          </label>
+        </div>
+
         {/* Guide search + actions */}
         <div className="flex items-center gap-2">
           {/* Series */}
@@ -282,13 +343,31 @@ function Home() {
                 value={nroGuia}
                 onChange={(e) => setNroGuia(e.target.value)}
                 placeholder={String(GUIA_BASE)}
-                className={`w-24 bg-[#151e17] border rounded px-2 py-1 text-xs font-mono font-bold outline-none transition-colors ${searchError
+                className={`w-24 bg-[#151e17] border rounded px-2 py-1 text-xs font-mono font-bold outline-none transition-colors ${guiaError
                   ? "border-[#7a3030] text-[#b07070] focus:border-[#a04040]"
                   : "border-[#263428] text-[#a8c4b0] focus:border-[#4a7c59]"
                   }`}
               />
             </div>
           </div>
+
+          {/* Código */}
+          {modoBusqueda === "codigo" && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-[#4a6452] font-semibold whitespace-nowrap">Código</span>
+              <select
+                value={codigoSel}
+                onChange={(e) => setCodigoSel(e.target.value)}
+                className="w-28 bg-[#151e17] border border-[#263428] rounded px-2 py-1 text-xs font-mono font-bold text-[#a8c4b0] outline-none cursor-pointer transition-colors focus:border-[#4a7c59]"
+              >
+                {REGISTROS_CODIGO.map((r) => (
+                  <option key={r.codigo} value={r.codigo} className="bg-[#151e17] text-[#a8c4b0]">
+                    {r.codigo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <button
             onClick={handleReset}
@@ -299,7 +378,7 @@ function Home() {
 
           <button
             onClick={() => window.print()}
-            disabled={!agricultor}
+            disabled={!datos}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded border transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
             style={{ background: "#1a2a1c", borderColor: "#2d7d3f", color: "#6aaa78" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1e3520"; }}
@@ -317,12 +396,12 @@ function Home() {
       <main className="max-w-3xl w-full mx-auto px-3 py-6 flex flex-col gap-4 flex-1 justify-center">
 
         {/* Search feedback pill */}
-        {searchError && (
+        {guiaError && (
           <div className="no-print flex items-center gap-2 text-[11px] text-[#8a5050] bg-[#1a1212] border border-[#3a1e1e] rounded px-3 py-1.5">
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
             </svg>
-            {searchError} — El mínimo es guía <strong>{GUIA_BASE}</strong>
+            {guiaError} — El mínimo es guía <strong>{GUIA_BASE}</strong>
           </div>
         )}
 
@@ -373,13 +452,13 @@ function Home() {
             <div className="border-r-2 border-[#263428]">
               <Field
                 label="Agricultor:"
-                value={agricultor ? agricultor.nombre_agricultor : ""}
+                value={datos ? datos.nombre_agricultor : ""}
                 readOnly
                 placeholder="— ingrese guía —"
               />
               <Field
                 label="DNI:"
-                value={agricultor ? agricultor.dni_agricultor : ""}
+                value={datos ? datos.dni_agricultor : ""}
                 readOnly
                 placeholder="—"
               />
@@ -407,13 +486,13 @@ function Home() {
               />
               <Field
                 label="Codigo:"
-                value={agricultor ? agricultor.codigo : ""}
+                value={datos ? datos.codigo : ""}
                 readOnly
                 placeholder="—"
               />
               <Field
                 label="Zona:"
-                value={agricultor ? agricultor.zona : ""}
+                value={datos ? datos.zona : ""}
                 readOnly
                 placeholder="—"
               />
@@ -548,7 +627,7 @@ function Home() {
         <div className="no-print flex justify-end mt-2">
           <button
             onClick={() => window.print()}
-            disabled={!agricultor}
+            disabled={!datos}
             className="flex items-center justify-center gap-2 w-full px-6 py-3 text-sm font-semibold rounded border border-[#2d7d3f] text-[#6aaa78] bg-[#1a2a1c] hover:bg-[#1e3520] transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -639,12 +718,12 @@ function Home() {
         <span className="sep">{'-'.repeat(41)}</span>
 
         <div><span className="b">Fecha:</span> {fecha || '—'}</div>
-        <div><span className="b">Codigo:</span> {agricultor?.codigo ?? '—'}</div>
-        <div><span className="b">Zona:</span> {agricultor?.zona ?? '—'}</div>
+        <div><span className="b">Codigo:</span> {datos?.codigo ?? '—'}</div>
+        <div><span className="b">Zona:</span> {datos?.zona ?? '—'}</div>
         <span className="sep">{'-'.repeat(41)}</span>
 
-        <div><span className="b">Agricultor:</span> {agricultor?.nombre_agricultor ?? '—'}</div>
-        <div><span className="b">DNI:</span> {agricultor?.dni_agricultor ?? '—'}</div>
+        <div><span className="b">Agricultor:</span> {datos?.nombre_agricultor ?? '—'}</div>
+        <div><span className="b">DNI:</span> {datos?.dni_agricultor ?? '—'}</div>
         <div><span className="b">Fletero:</span> {fletero || '—'}</div>
         <div><span className="b">Placa:</span> {placa || '—'}</div>
         <div className="row">
