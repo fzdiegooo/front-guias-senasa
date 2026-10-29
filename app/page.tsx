@@ -148,7 +148,7 @@ function Home() {
           const updated = { ...it, [field]: value };
           if (field === "cantidad") {
             const num = Number(value);
-            updated.detalle = isNaN(num) || value.trim() === "" ? "0" : String(num * 15);
+            updated.detalle = isNaN(num) || value.trim() === "" ? "0" : String(num * 17);
           }
           return updated;
         }
