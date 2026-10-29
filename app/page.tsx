@@ -2,8 +2,25 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { AGRICULTORES, GUIA_BASE, TOTAL_REGISTROS, Agricultor } from "./data/agricultores";
-import { REGISTROS_CODIGO } from "./data/codigos";
+import { AGRICULTORES, GUIA_BASE } from "./data/agricultores";
+import { REGISTROS_CODIGO_NATIVA, REGISTROS_CODIGO_FRUTICOLA, RegistroCodigo } from "./data/codigos";
+
+type Empresa = "nativa" | "fruticola";
+
+/* Each brand has its own code list and kg-per-jaba factor */
+const CODIGOS_POR_EMPRESA = { nativa: REGISTROS_CODIGO_NATIVA, fruticola: REGISTROS_CODIGO_FRUTICOLA };
+const KG_POR_JABA = { nativa: 17, fruticola: 15 };
+
+/* Guide-number lookup: guide `base` maps to registros[0] and wraps around after the last one */
+const GUIA_POR_EMPRESA = {
+  nativa: { base: 4601, registros: REGISTROS_CODIGO_NATIVA.filter((r) => r.codigo.startsWith("J-GG")) },
+  fruticola: { base: GUIA_BASE, registros: AGRICULTORES },
+};
+
+const calcularDetalle = (cantidad: string, empresa: Empresa) => {
+  const num = Number(cantidad);
+  return isNaN(num) || cantidad.trim() === "" ? "0" : String(num * KG_POR_JABA[empresa]);
+};
 
 interface Item {
   id: string;
@@ -91,9 +108,9 @@ function Home() {
   /* Guide search */
   const [serieGuia] = useState("001");
   const [modoBusqueda, setModoBusqueda] = useState<"guia" | "codigo">("guia");
-  const [nroGuia, setNroGuia] = useState("3800");
-  const [codigoSel, setCodigoSel] = useState(REGISTROS_CODIGO[0].codigo);
-  const [agricultor, setAgricultor] = useState<Agricultor | null>(null);
+  const [nroGuia, setNroGuia] = useState(String(GUIA_POR_EMPRESA.nativa.base));
+  const [codigoSel, setCodigoSel] = useState(REGISTROS_CODIGO_NATIVA[0].codigo);
+  const [agricultor, setAgricultor] = useState<RegistroCodigo | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   /* Form fields */
@@ -104,7 +121,7 @@ function Home() {
   const [globalGap, setGlobalGap] = useState(true);
   const [nombreNativa, setNombreNativa] = useState("VARGAS");
   const [nombreTransportista, setNombreTransportista] = useState("");
-  const [empresa, setEmpresa] = useState<"nativa" | "fruticola">("nativa");
+  const [empresa, setEmpresa] = useState<Empresa>("nativa");
 
   /* Items */
   const [items, setItems] = useState<Item[]>([
@@ -125,20 +142,31 @@ function Home() {
     if (!clean) { setAgricultor(null); setSearchError("Ingrese un número de guía"); return; }
     const n = Number(clean);
     if (isNaN(n)) { setAgricultor(null); setSearchError("Solo se aceptan números"); return; }
-    if (n < GUIA_BASE) { setAgricultor(null); setSearchError(`Mínimo permitido: ${GUIA_BASE}`); return; }
-    const idx = (n - GUIA_BASE) % TOTAL_REGISTROS;
-    setAgricultor(AGRICULTORES[idx]);
+    const { base, registros } = GUIA_POR_EMPRESA[empresa];
+    if (n < base) { setAgricultor(null); setSearchError(`Mínimo permitido: ${base}`); return; }
+    const idx = (n - base) % registros.length;
+    setAgricultor(registros[idx]);
     setSearchError(null);
-  }, [nroGuia]);
+  }, [nroGuia, empresa]);
 
   /* The guide-number lookup error is irrelevant while searching by code */
   const guiaError = modoBusqueda === "guia" ? searchError : null;
+
+  const registrosCodigo = CODIGOS_POR_EMPRESA[empresa];
+
+  /* Switching brand changes the code list and the weight factor */
+  const cambiarEmpresa = (nueva: Empresa) => {
+    setEmpresa(nueva);
+    setCodigoSel(CODIGOS_POR_EMPRESA[nueva][0].codigo);
+    setNroGuia(String(GUIA_POR_EMPRESA[nueva].base));
+    setItems((prev) => prev.map((it) => ({ ...it, detalle: calcularDetalle(it.cantidad, nueva) })));
+  };
 
   /* Record currently shown: from the guide lookup or from the code list */
   const datos =
     modoBusqueda === "guia"
       ? agricultor
-      : REGISTROS_CODIGO.find((r) => r.codigo === codigoSel) ?? null;
+      : registrosCodigo.find((r) => r.codigo === codigoSel) ?? null;
 
   /* Item helpers */
   const updateItem = (id: string, field: keyof Item, value: string) =>
@@ -146,10 +174,7 @@ function Home() {
       prev.map((it) => {
         if (it.id === id) {
           const updated = { ...it, [field]: value };
-          if (field === "cantidad") {
-            const num = Number(value);
-            updated.detalle = isNaN(num) || value.trim() === "" ? "0" : String(num * 17);
-          }
+          if (field === "cantidad") updated.detalle = calcularDetalle(value, empresa);
           return updated;
         }
         return it;
@@ -190,8 +215,8 @@ function Home() {
 
   const handleReset = () => {
     setModoBusqueda("guia");
-    setNroGuia("3800");
-    setCodigoSel(REGISTROS_CODIGO[0].codigo);
+    setNroGuia(String(GUIA_POR_EMPRESA.nativa.base));
+    setCodigoSel(REGISTROS_CODIGO_NATIVA[0].codigo);
     setFletero("");
     setPlaca("");
     setOrganico(true);
@@ -234,7 +259,7 @@ function Home() {
               type="radio"
               name="empresa"
               checked={empresa === "nativa"}
-              onChange={() => setEmpresa("nativa")}
+              onChange={() => cambiarEmpresa("nativa")}
               className="sr-only"
             />
             <div
@@ -256,7 +281,7 @@ function Home() {
               type="radio"
               name="empresa"
               checked={empresa === "fruticola"}
-              onChange={() => setEmpresa("fruticola")}
+              onChange={() => cambiarEmpresa("fruticola")}
               className="sr-only"
             />
             <div
@@ -342,7 +367,7 @@ function Home() {
                 type="text"
                 value={nroGuia}
                 onChange={(e) => setNroGuia(e.target.value)}
-                placeholder={String(GUIA_BASE)}
+                placeholder={String(GUIA_POR_EMPRESA[empresa].base)}
                 className={`w-24 bg-[#151e17] border rounded px-2 py-1 text-xs font-mono font-bold outline-none transition-colors ${guiaError
                   ? "border-[#7a3030] text-[#b07070] focus:border-[#a04040]"
                   : "border-[#263428] text-[#a8c4b0] focus:border-[#4a7c59]"
@@ -360,7 +385,7 @@ function Home() {
                 onChange={(e) => setCodigoSel(e.target.value)}
                 className="w-28 bg-[#151e17] border border-[#263428] rounded px-2 py-1 text-xs font-mono font-bold text-[#a8c4b0] outline-none cursor-pointer transition-colors focus:border-[#4a7c59]"
               >
-                {REGISTROS_CODIGO.map((r) => (
+                {registrosCodigo.map((r) => (
                   <option key={r.codigo} value={r.codigo} className="bg-[#151e17] text-[#a8c4b0]">
                     {r.codigo}
                   </option>
@@ -401,7 +426,7 @@ function Home() {
             <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
             </svg>
-            {guiaError} — El mínimo es guía <strong>{GUIA_BASE}</strong>
+            {guiaError} — El mínimo es guía <strong>{GUIA_POR_EMPRESA[empresa].base}</strong>
           </div>
         )}
 
